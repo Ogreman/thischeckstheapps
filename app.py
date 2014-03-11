@@ -11,8 +11,17 @@ REDIS_URL = os.environ.get('REDISTOGO_URL', 'redis://localhost')
 celery = Celery(__name__, broker=REDIS_URL)
 
 APPS_TO_PING = [
-    "http://isitaleapyear.herokuapp.com/",
-    "http://thisisatasklog.herokuapp.com/",
+    "immense-ridge-2398",
+    "isitaleapyear",
+    "isitonlineyet",
+    "isitonspotify",
+    "post-thing",
+    "powerful-thicket-9270",
+    "thereadinglist",
+    "thesingleimg",
+    "thewhiteboard",
+    "thisisatasklog",
+    "tweetboard",
 ]
 
 URL_TO_POST = "http://thisisatasklog.herokuapp.com/api/"
@@ -25,10 +34,11 @@ def ping_url(url):
 
 @periodic_task(run_every=timedelta(minutes=1))
 def log_ping():
-    for url in APPS_TO_PING:
+    for app in APPS_TO_PING:
+        url = "http://{app}.herokuapp.com/".format(app=app)
         payload = {
-            "title": "{action} {url}".format(
-                action="log_ping",
+            "task": "{action} {url}".format(
+                action="ping_url",
                 url=url
             ),
             "result": ping_url(url),

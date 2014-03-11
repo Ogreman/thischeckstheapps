@@ -16,7 +16,7 @@ HEROKU_USER = os.environ['HEROKU_USERNAME']
 HEROKU_PASS = os.environ['HEROKU_PASSWORD']
 cloud = heroku.from_pass(HEROKU_USER, HEROKU_PASS)
 APPS_TO_PING = [
-    app.name for app in cloud.apps
+    heroku_app.name for heroku_app in cloud.apps
 ]
 
 URL_TO_POST = "http://thisisatasklog.herokuapp.com/api/"

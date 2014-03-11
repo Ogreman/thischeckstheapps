@@ -37,10 +37,8 @@ def log_ping():
     for app in APPS_TO_PING:
         url = "http://{app}.herokuapp.com/".format(app=app)
         payload = {
-            "task": "{action} {url}".format(
-                action="ping_url",
-                url=url
-            ),
+            "task": "ping_url",
+            "target": url,
             "result": ping_url(url),
             "time": datetime.now(),
         }

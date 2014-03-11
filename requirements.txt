@@ -11,6 +11,7 @@ anyjson==0.3.3
 argparse==1.2.1
 billiard==3.3.0.16
 celery==3.1.9
+gunicorn==18.0
 itsdangerous==0.23
 kombu==3.0.13
 psycopg2==2.5.2

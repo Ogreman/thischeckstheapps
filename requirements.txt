@@ -8,4 +8,5 @@ Unipath==1.0
 Werkzeug==0.9.4
 argparse==1.2.1
 itsdangerous==0.23
+psycopg2==2.5.2
 wsgiref==0.1.2

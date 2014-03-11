@@ -32,7 +32,7 @@ def ping_url(url):
     return resp.status_code
 
 
-@periodic_task(run_every=timedelta(minutes=60))
+@periodic_task(run_every=timedelta(minutes=15))
 def log_ping():
     for app in APPS_TO_PING:
         url = "http://{app}.herokuapp.com/".format(app=app)

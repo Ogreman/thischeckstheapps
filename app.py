@@ -34,7 +34,7 @@ def log_ping():
             "result": ping_url(url),
             "time": datetime.now(),
         }
-        log = request.post(
+        log = requests.post(
             URL_TO_POST,
             data=payload
         )

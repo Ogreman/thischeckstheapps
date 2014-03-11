@@ -1,8 +1,10 @@
 # app.py
 
 from datetime import timedelta, datetime
+
 import requests
 import os
+import heroku
 
 from celery import Celery
 from celery.task import periodic_task
@@ -10,18 +12,11 @@ from celery.task import periodic_task
 REDIS_URL = os.environ.get('REDISTOGO_URL', 'redis://localhost')
 celery = Celery(__name__, broker=REDIS_URL)
 
+HEROKU_USER = os.environ['HEROKU_USERNAME']
+HEROKU_PASS = os.environ['HEROKU_PASSWORD']
+cloud = heroku.from_pass(HEROKU_USER, HEROKU_PASS)
 APPS_TO_PING = [
-    "immense-ridge-2398",
-    "isitaleapyear",
-    "isitonlineyet",
-    "isitonspotify",
-    "post-thing",
-    "powerful-thicket-9270",
-    "thereadinglist",
-    "thesingleimg",
-    "thewhiteboard",
-    "thisisatasklog",
-    "tweetboard",
+    app.name for app in cloud.apps
 ]
 
 URL_TO_POST = "http://thisisatasklog.herokuapp.com/api/"

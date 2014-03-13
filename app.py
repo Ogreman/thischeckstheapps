@@ -65,7 +65,7 @@ def leap_tweet():
     response = requests.get(get_url)
     if response.ok:
         leap = response.json()
-        tweet = "{year} {leap} a leap year this year.".format(
+        tweet = "Happ New Year! {year} {leap} a leap year.".format(
             year=leap['year'],
             leap="is" if leap['leap'] else "is not",
         )

@@ -9,17 +9,9 @@ import heroku
 from celery import Celery
 from celery.task import periodic_task
 
+
 REDIS_URL = os.environ.get('REDISTOGO_URL', 'redis://localhost')
 celery = Celery(__name__, broker=REDIS_URL)
-
-HEROKU_USER = os.environ['HEROKU_USERNAME']
-HEROKU_PASS = os.environ['HEROKU_PASSWORD']
-cloud = heroku.from_pass(HEROKU_USER, HEROKU_PASS)
-APPS_TO_PING = [
-    heroku_app.name for heroku_app in cloud.apps
-]
-
-URL_TO_POST = "http://thisisatasklog.herokuapp.com/api/"
 
 
 def ping_url(url):
@@ -29,7 +21,11 @@ def ping_url(url):
 
 @periodic_task(run_every=timedelta(hours=3))
 def log_ping():
-    for app in APPS_TO_PING:
+    heroku_user = os.environ['HEROKU_USERNAME']
+    heroku_pass = os.environ['HEROKU_PASSWORD']
+    cloud = heroku.from_pass(heroku_user, heroku_pass)
+    task_log_url = "http://thisisatasklog.herokuapp.com/api/"
+    for app in (h_app.name for h_app in cloud.apps):
         url = "http://{app}.herokuapp.com/".format(app=app)
         payload = {
             "task": "ping_url",
@@ -38,6 +34,20 @@ def log_ping():
             "time": datetime.now(),
         }
         log = requests.post(
-            URL_TO_POST,
+            task_log_url,
             data=payload
         )
+
+
+@periodic_task(run_every=timedelta(hours=24))
+def tweet_check():
+    get_url = "http://tweetboard.herokuapp.com/api/recent/"
+    post_url = "http://tweetboard.herokuapp.com/api/"
+    response = requests.get(get_url)
+    if response.ok:
+        posts = response.json()
+        if posts:
+            tweet = "There were {n} new anonymous tweets today.".format(
+                n=len(posts)
+            )
+            requests.post(post_url, data={ 'text': tweet })

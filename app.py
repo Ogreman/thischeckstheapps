@@ -19,9 +19,17 @@ task_log_url = "http://thisisatasklog.herokuapp.com/api/"
 tweet_url = "http://tweetboard.herokuapp.com/api/"
 
 
-def ping_url(url):
-    resp = requests.get(url)
-    return resp.status_code
+def log_this(task, target, result):
+    payload = {
+        "task": task,
+        "target": target,
+        "result": result,
+        "time": datetime.now(),
+    }
+    log = requests.post(
+        task_log_url,
+        data=payload
+    )
 
 
 @periodic_task(run_every=timedelta(hours=3))
@@ -31,16 +39,8 @@ def log_ping():
     cloud = heroku.from_pass(heroku_user, heroku_pass)
     for app in (h_app.name for h_app in cloud.apps):
         url = "http://{app}.herokuapp.com/".format(app=app)
-        payload = {
-            "task": sys._getframe().f_code.co_name,
-            "target": url,
-            "result": ping_url(url),
-            "time": datetime.now(),
-        }
-        log = requests.post(
-            task_log_url,
-            data=payload
-        )
+        result = requests.get(url).status_code
+        log_this(sys._getframe().f_code.co_name, url, result)
 
 
 @periodic_task(run_every=timedelta(hours=24))
@@ -54,16 +54,7 @@ def tweet_check():
                 n=len(posts)
             )
             requests.post(tweet_url, data={'text': tweet})
-    payload = {
-        "task": sys._getframe().f_code.co_name,
-        "target": get_url,
-        "result": response.status_code,
-        "time": datetime.now(),
-    }
-    log = requests.post(
-        task_log_url,
-        data=payload
-    )
+    log_this(sys._getframe().f_code.co_name, get_url, response.status_code)
 
 
 @periodic_task(run_every=crontab(day_of_month='1', month_of_year='1'))
@@ -79,13 +70,4 @@ def leap_tweet():
             leap="is" if leap['leap'] else "is not",
         )
         requests.post(tweet_url, data={'text': tweet})
-    payload = {
-        "task": sys._getframe().f_code.co_name,
-        "target": get_url,
-        "result": response.status_code,
-        "time": datetime.now(),
-    }
-    log = requests.post(
-        task_log_url,
-        data=payload
-    )
+    log_this(sys._getframe().f_code.co_name, get_url, response.status_code)

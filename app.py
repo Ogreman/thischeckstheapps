@@ -4,6 +4,7 @@ from datetime import timedelta, datetime
 
 import requests
 import os
+import sys
 import heroku
 
 from celery import Celery
@@ -12,6 +13,8 @@ from celery.task import periodic_task
 
 REDIS_URL = os.environ.get('REDISTOGO_URL', 'redis://localhost')
 celery = Celery(__name__, broker=REDIS_URL)
+
+task_log_url = "http://thisisatasklog.herokuapp.com/api/"
 
 
 def ping_url(url):
@@ -24,11 +27,10 @@ def log_ping():
     heroku_user = os.environ['HEROKU_USERNAME']
     heroku_pass = os.environ['HEROKU_PASSWORD']
     cloud = heroku.from_pass(heroku_user, heroku_pass)
-    task_log_url = "http://thisisatasklog.herokuapp.com/api/"
     for app in (h_app.name for h_app in cloud.apps):
         url = "http://{app}.herokuapp.com/".format(app=app)
         payload = {
-            "task": "ping_url",
+            "task": sys._getframe().f_code.co_name,
             "target": url,
             "result": ping_url(url),
             "time": datetime.now(),
@@ -51,3 +53,13 @@ def tweet_check():
                 n=len(posts)
             )
             requests.post(post_url, data={ 'text': tweet })
+    payload = {
+        "task": sys._getframe().f_code.co_name,
+        "target": get_url,
+        "result": response.status_code,
+        "time": datetime.now(),
+    }
+    log = requests.post(
+        task_log_url,
+        data=payload
+    )

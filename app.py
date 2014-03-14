@@ -50,8 +50,9 @@ def tweet_check():
     if response.ok:
         posts = response.json()
         if posts:
-            tweet = "There were {n} new anonymous tweets today.".format(
-                n=len(posts)
+            tweet = "Posted {n} new anonymous {tweets} today.".format(
+                n=len(posts),
+                tweets="tweets" if len(posts) > 1 else "tweet" 
             )
             requests.post(tweet_url, data={'text': tweet})
     log_this(sys._getframe().f_code.co_name, get_url, response.status_code)

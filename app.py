@@ -1,6 +1,6 @@
 # app.py
 
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 
 import requests
 import os
@@ -11,12 +11,15 @@ from celery import Celery
 from celery.task import periodic_task
 from celery.schedules import crontab
 
+from twilio.rest import TwilioRestClient
+
 
 REDIS_URL = os.environ.get('REDISTOGO_URL', 'redis://localhost')
 celery = Celery(__name__, broker=REDIS_URL)
 
 task_log_url = "http://thisisatasklog.herokuapp.com/api/"
 tweet_url = "http://tweetboard.herokuapp.com/api/"
+DATE_FORMAT = "%a, %d %b %Y %H:%M:%S +0000"
 
 
 def log_this(task, target, result):
@@ -26,10 +29,11 @@ def log_this(task, target, result):
         "result": result,
         "time": datetime.now(),
     }
-    log = requests.post(
+    resp = requests.post(
         task_log_url,
         data=payload
     )
+    print resp.content
 
 
 @periodic_task(run_every=timedelta(hours=3))
@@ -72,3 +76,28 @@ def leap_tweet():
         )
         requests.post(tweet_url, data={'text': tweet})
     log_this(sys._getframe().f_code.co_name, get_url, response.status_code)
+
+
+@periodic_task(run_every=timedelta(hours=1))
+def check_sms():
+    account = os.environ['TWILIO_ACCOUNT_SID']
+    auth = os.environ['TWILIO_AUTH_TOKEN']
+    me = os.environ['MY_NUMBER']
+    today = date.today() 
+    now = datetime.now()
+    client = TwilioRestClient(account, auth)
+    messages = client.messages.list(
+        from_=me,
+        date_sent=str(today)
+    )
+    if messages:
+        text = messages[0]
+        text_dt = datetime.strptime(text.date_sent, DATE_FORMAT)
+        if now - text_dt < timedelta(hours=1): 
+            requests.post(tweet_url, data={'text': text.body})
+            status = 1
+        else:
+            status = 0
+    else:
+        status = -1
+    log_this(sys._getframe().f_code.co_name, "SMS", status)

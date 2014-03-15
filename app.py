@@ -105,7 +105,8 @@ def check_sms():
                     to=text.from_,
                     from_=text.to,
                 )
-            requests.post(tweet_url, data={'text': text.body})
+            else:
+                requests.post(tweet_url, data={'text': text.body})
             status = 1
         else:
             status = 0

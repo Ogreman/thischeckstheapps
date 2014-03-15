@@ -20,7 +20,7 @@ celery = Celery(__name__, broker=REDIS_URL)
 task_log_url = "http://thisisatasklog.herokuapp.com/api/"
 tweet_url = "http://tweetboard.herokuapp.com/api/"
 DATE_FORMAT = "%a, %d %b %Y %H:%M:%S +0000"
-
+SPOTIFY_URL = "http://isitonspotify.herokuapp.com/?artist={artist}"
 
 def log_this(task, target, result):
     payload = {
@@ -94,6 +94,17 @@ def check_sms():
         text = messages[0]
         text_dt = datetime.strptime(text.date_sent, DATE_FORMAT)
         if now - text_dt < timedelta(hours=1): 
+            if "SPOTIFY" in text.body:
+                artist = text.body.replace("SPOTIFY", "")
+                result = requests.get(SPOTIFY_URL.format(artist=artist))
+                client.messages.create(
+                    body="{artist} is {on} spotify".format(
+                        artist=artist,
+                        on="on" if result.json()['check'] else "not on"
+                    ),
+                    to=text.from_,
+                    from_=text.to,
+                )
             requests.post(tweet_url, data={'text': text.body})
             status = 1
         else:

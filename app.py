@@ -20,7 +20,7 @@ celery = Celery(__name__, broker=REDIS_URL)
 task_log_url = "http://thisisatasklog.herokuapp.com/api/"
 tweet_url = "http://tweetboard.herokuapp.com/api/"
 DATE_FORMAT = "%a, %d %b %Y %H:%M:%S +0000"
-SPOTIFY_URL = "http://isitonspotify.herokuapp.com/?artist={artist}"
+SPOTIFY_URL = "http://isitonspotify.herokuapp.com/api?artist={artist}"
 
 def log_this(task, target, result):
     payload = {

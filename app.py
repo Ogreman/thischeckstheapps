@@ -23,13 +23,21 @@ tweet_url = "http://tweetboard.herokuapp.com/api/"
 DATE_FORMAT = "%a, %d %b %Y %H:%M:%S +0000"
 SPOTIFY_URL = "http://isitonspotify.herokuapp.com/api?artist={artist}"
 
-auth = HTTPBasicAuth(os.environ['TOGGLE_NAME'], os.environ['TOGGLE_PASS'])
-response = requests.get('http://thistogglesthetasks.herokuapp.com/tasks/', auth=auth)
-if response.ok:
-    results = response.json()['results'] 
-    TASKS = { task['name']: task['active'] for task in results }
-else:
-    TASKS = {}
+TASKS = {}
+
+
+@periodic_task(run_every=timedelta(hours=2))
+def check_toggles():        
+    auth = HTTPBasicAuth(os.environ['TOGGLE_NAME'], os.environ['TOGGLE_PASS'])
+    response = requests.get('http://thistogglesthetasks.herokuapp.com/tasks/', auth=auth)
+    if response.ok:
+        results = response.json()['results'] 
+        TASKS.update(
+            { 
+                task['name']: task['active']
+                for task in results
+            }
+        )
 
 
 def log_this(task, target, result):

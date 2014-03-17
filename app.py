@@ -19,6 +19,7 @@ REDIS_URL = os.environ.get('REDISTOGO_URL', 'redis://localhost')
 celery = Celery(__name__, broker=REDIS_URL)
 
 task_log_url = "http://thisisatasklog.herokuapp.com/api/"
+toggle_url = "http://thistogglesthetasks.herokuapp.com/tasks/"
 tweet_url = "http://tweetboard.herokuapp.com/api/"
 DATE_FORMAT = "%a, %d %b %Y %H:%M:%S +0000"
 SPOTIFY_URL = "http://isitonspotify.herokuapp.com/api?artist={artist}"
@@ -29,7 +30,7 @@ TASKS = {}
 @periodic_task(run_every=timedelta(hours=2))
 def check_toggles():        
     auth = HTTPBasicAuth(os.environ['TOGGLE_NAME'], os.environ['TOGGLE_PASS'])
-    response = requests.get('http://thistogglesthetasks.herokuapp.com/tasks/', auth=auth)
+    response = requests.get(toggle_url, auth=auth)
     if response.ok:
         results = response.json()['results'] 
         TASKS.update(
@@ -38,13 +39,15 @@ def check_toggles():
                 for task in results
             }
         )
+    log_this(sys._getframe().f_code.co_name, toggle_url, response.status_code)
+
 
 
 def log_this(task, target, result):
     payload = {
         "task": task,
         "target": target,
-        "result": result,
+        "result": int(result),
         "time": datetime.now(),
     }
     resp = requests.post(

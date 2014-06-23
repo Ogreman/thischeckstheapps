@@ -28,19 +28,18 @@ TASKS = {}
 
 
 @periodic_task(run_every=timedelta(hours=2))
-def check_toggles():        
+def check_toggles():
     auth = HTTPBasicAuth(os.environ['TOGGLE_NAME'], os.environ['TOGGLE_PASS'])
     response = requests.get(toggle_url, auth=auth)
     if response.ok:
-        results = response.json()['results'] 
+        results = response.json()['results']
         TASKS.update(
-            { 
+            {
                 task['name']: task['active']
                 for task in results
             }
         )
     log_this(sys._getframe().f_code.co_name, toggle_url, response.status_code)
-
 
 
 def log_this(task, target, result):
@@ -70,8 +69,20 @@ def log_ping():
 
 
 @periodic_task(run_every=timedelta(hours=24))
+def log_check():
+    if TASKS.get('log_check'):
+        get_url = task_log_url + "check"
+        response = requests.get(get_url)
+        try:
+            message = response.json()['message']
+        except AttributeError:
+            message = "Failed"
+        log_this(sys._getframe().f_code.co_name, get_url, message)
+
+
+@periodic_task(run_every=timedelta(hours=24))
 def tweet_check():
-    if TASKS.get('tweet_check'):    
+    if TASKS.get('tweet_check'):
         get_url = "http://tweetboard.herokuapp.com/api/recent/"
         response = requests.get(get_url)
         if response.ok:
@@ -79,7 +90,7 @@ def tweet_check():
             if posts:
                 tweet = "Posted {n} new anonymous {tweets} today.".format(
                     n=len(posts),
-                    tweets="tweets" if len(posts) > 1 else "tweet" 
+                    tweets="tweets" if len(posts) > 1 else "tweet"
                 )
                 requests.post(tweet_url, data={'text': tweet})
         log_this(sys._getframe().f_code.co_name, get_url, response.status_code)
@@ -87,7 +98,7 @@ def tweet_check():
 
 @periodic_task(run_every=crontab(day_of_month='1', month_of_year='1'))
 def leap_tweet():
-    if TASKS.get('leap_tweet'):    
+    if TASKS.get('leap_tweet'):
         get_url = "http://isitaleapyear.herokuapp.com/api/?year={year}".format(
             year=datetime.now().year
         )
@@ -104,11 +115,11 @@ def leap_tweet():
 
 @periodic_task(run_every=timedelta(hours=1))
 def check_sms():
-    if TASKS.get('check_sms'):    
+    if TASKS.get('check_sms'):
         account = os.environ['TWILIO_ACCOUNT_SID']
         auth = os.environ['TWILIO_AUTH_TOKEN']
         me = os.environ['MY_NUMBER']
-        today = date.today() 
+        today = date.today()
         now = datetime.now()
         client = TwilioRestClient(account, auth)
         messages = client.messages.list(
@@ -118,7 +129,7 @@ def check_sms():
         if messages:
             text = messages[0]
             text_dt = datetime.strptime(text.date_sent, DATE_FORMAT)
-            if now - text_dt < timedelta(hours=1): 
+            if now - text_dt < timedelta(hours=1):
                 if "SPOTIFY" in text.body:
                     artist = text.body.replace("SPOTIFY", "")
                     result = requests.get(SPOTIFY_URL.format(artist=artist))

@@ -27,6 +27,20 @@ SPOTIFY_URL = "http://isitonspotify.herokuapp.com/api?artist={artist}"
 TASKS = {}
 
 
+def log_this(task, target, result):
+    payload = {
+        "task": task,
+        "target": target,
+        "result": result,
+        "time": datetime.now(),
+    }
+    resp = requests.post(
+        task_log_url,
+        data=payload
+    )
+    print resp.content
+
+
 @periodic_task(run_every=timedelta(hours=2))
 def check_toggles():
     auth = HTTPBasicAuth(os.environ['TOGGLE_NAME'], os.environ['TOGGLE_PASS'])
@@ -39,21 +53,8 @@ def check_toggles():
                 for task in results
             }
         )
+    print TASKS
     log_this(sys._getframe().f_code.co_name, toggle_url, response.status_code)
-
-
-def log_this(task, target, result):
-    payload = {
-        "task": task,
-        "target": target,
-        "result": int(result),
-        "time": datetime.now(),
-    }
-    resp = requests.post(
-        task_log_url,
-        data=payload
-    )
-    print resp.content
 
 
 @periodic_task(run_every=timedelta(hours=3))
@@ -73,9 +74,9 @@ def log_check():
     if TASKS.get('log_check'):
         get_url = task_log_url + "check"
         response = requests.get(get_url)
-        try:
+        if response.ok:
             message = response.json()['message']
-        except AttributeError:
+        else:
             message = "Failed"
         log_this(sys._getframe().f_code.co_name, get_url, message)
 

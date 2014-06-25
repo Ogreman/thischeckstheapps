@@ -31,7 +31,7 @@ def log_this(task, target, result):
     payload = {
         "task": task,
         "target": target,
-        "result": result,
+        "result": int(result),
         "time": datetime.now(),
     }
     resp = requests.post(
@@ -75,9 +75,9 @@ def log_check():
         get_url = task_log_url + "check"
         response = requests.get(get_url)
         if response.ok:
-            message = response.json()['message']
+            message = response.json()['removed']
         else:
-            message = "Failed"
+            message = "-1"
         log_this(sys._getframe().f_code.co_name, get_url, message)
 
 
